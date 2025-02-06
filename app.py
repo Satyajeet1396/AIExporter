@@ -3,18 +3,22 @@ import markdown2
 from fpdf import FPDF
 from docx import Document
 import tempfile
-import os
 from markdown import markdown
 from bs4 import BeautifulSoup
 
+def parse_markdown(markdown_text):
+    """Helper function to parse Markdown into HTML and BeautifulSoup."""
+    html = markdown(markdown_text)
+    return BeautifulSoup(html, "html.parser")
+
 def convert_markdown_to_pdf(markdown_text, pdf_filename):
+    """Convert Markdown text to a PDF file."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     
-    html = markdown(markdown_text)
-    soup = BeautifulSoup(html, "html.parser")
+    soup = parse_markdown(markdown_text)
     
     for tag in soup.find_all():
         if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
@@ -45,9 +49,9 @@ def convert_markdown_to_pdf(markdown_text, pdf_filename):
     pdf.output(pdf_filename)
 
 def convert_markdown_to_docx(markdown_text, docx_filename):
+    """Convert Markdown text to a DOCX file."""
     doc = Document()
-    html = markdown(markdown_text)
-    soup = BeautifulSoup(html, "html.parser")
+    soup = parse_markdown(markdown_text)
     
     for tag in soup.find_all():
         if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
@@ -83,16 +87,24 @@ def main():
         with col1:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmpfile:
                 convert_markdown_to_docx(markdown_text, tmpfile.name)
-                st.download_button(label="Download DOCX", data=open(tmpfile.name, "rb").read(), file_name="converted.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                os.unlink(tmpfile.name)
+                st.download_button(
+                    label="Download DOCX",
+                    data=open(tmpfile.name, "rb").read(),
+                    file_name="converted.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
         
         with col2:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
                 convert_markdown_to_pdf(markdown_text, tmpfile.name)
-                st.download_button(label="Download PDF", data=open(tmpfile.name, "rb").read(), file_name="converted.pdf", mime="application/pdf")
-                os.unlink(tmpfile.name)
+                st.download_button(
+                    label="Download PDF",
+                    data=open(tmpfile.name, "rb").read(),
+                    file_name="converted.pdf",
+                    mime="application/pdf"
+                )
     else:
         st.warning("Please paste some markdown text.")
-    
+
 if __name__ == "__main__":
     main()
