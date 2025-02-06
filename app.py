@@ -3,7 +3,6 @@ import markdown2
 from fpdf import FPDF
 from docx import Document
 import io
-import time
 from markdown import markdown
 from bs4 import BeautifulSoup
 
@@ -70,29 +69,25 @@ def convert_markdown_to_docx(markdown_text):
     doc_bytes.seek(0)
     return doc_bytes
 
-def update_text():
-    """Trigger a re-run when text changes."""
-    st.session_state.markdown_input = st.session_state.text_area_value
-    time.sleep(0.1)  # Small delay to prevent UI flickering
-    st.experimental_rerun()  # ✅ Force re-run immediately when typing
-
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
 
     # ✅ Auto-render when typing
-    st.text_area(
+    markdown_text = st.text_area(
         "Paste your copied markdown below:",
         value=st.session_state.markdown_input,
-        key="text_area_value",
-        on_change=update_text
+        key="markdown_input"
     )
 
-    if st.session_state.markdown_input:
-        html_text = markdown2.markdown(st.session_state.markdown_input)
+    # Only update the session state when the text changes
+    st.session_state.markdown_input = markdown_text
+
+    if markdown_text:
+        html_text = markdown2.markdown(markdown_text)
         st.markdown(html_text, unsafe_allow_html=True)
 
-        pdf_bytes = convert_markdown_to_pdf(st.session_state.markdown_input)
-        docx_bytes = convert_markdown_to_docx(st.session_state.markdown_input)
+        pdf_bytes = convert_markdown_to_pdf(markdown_text)
+        docx_bytes = convert_markdown_to_docx(markdown_text)
 
         col1, col2 = st.columns(2)
 
