@@ -92,6 +92,35 @@ def html_to_docx(html_content):
     return doc
 
 def convert_latex_to_omml(latex_code):
-    # Replace this function with actual LaTeX to OMML conversion logic
-    return f"<w:t>{latex_code}</w:t>"
+    # Example of a simple LaTeX to OMML (Office Math Markup Language) conversion
+    # Replace this with actual LaTeX-to-OMML conversion logic (e.g., using a library like python-docx-oxml)
+    # Here, we are just wrapping LaTeX in a placeholder for demo purposes.
+    return f'<m:oMath><m:t>{latex_code}</m:t></m:oMath>'
 
+# Example usage:
+
+if __name__ == "__main__":
+    html_content = """
+    <h1>Heading 1</h1>
+    <p>This is a <strong>bold</strong> paragraph with <em>italic</em> text.</p>
+    <pre>
+    def example_function():
+        return "Hello, World!"
+    </pre>
+    <p>Here is a math formula: <span class="math">E = mc^2</span></p>
+    <table>
+        <tr><th>Header 1</th><th>Header 2</th></tr>
+        <tr><td>Row 1 Col 1</td><td>Row 1 Col 2</td></tr>
+        <tr><td>Row 2 Col 1</td><td>Row 2 Col 2</td></tr>
+    </table>
+    """
+    
+    # Convert HTML to DOCX
+    doc = html_to_docx(html_content)
+    
+    if doc:
+        # Save DOCX to a file
+        doc.save("output.docx")
+        print("Document saved as 'output.docx'.")
+    else:
+        print("Failed to create document.")
