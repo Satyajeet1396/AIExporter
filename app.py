@@ -6,10 +6,6 @@ import io
 from markdown import markdown
 from bs4 import BeautifulSoup
 
-# ✅ Ensure session state for auto-rendering
-if "markdown_input" not in st.session_state:
-    st.session_state.markdown_input = ""
-
 def parse_markdown(markdown_text):
     """Convert Markdown to BeautifulSoup for parsing."""
     html = markdown(markdown_text)
@@ -72,14 +68,18 @@ def convert_markdown_to_docx(markdown_text):
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
 
-    # ✅ Auto-render when typing
+    # ✅ Use session_state correctly
+    if "markdown_input" not in st.session_state:
+        st.session_state.markdown_input = ""
+
+    # Text area widget
     markdown_text = st.text_area(
         "Paste your copied markdown below:",
         value=st.session_state.markdown_input,
         key="markdown_input"
     )
 
-    # Only update the session state when the text changes
+    # Automatically update session state based on text area content
     st.session_state.markdown_input = markdown_text
 
     if markdown_text:
