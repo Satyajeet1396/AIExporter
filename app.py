@@ -1,5 +1,4 @@
 import streamlit as st
-import re
 import logging
 from bs4 import BeautifulSoup
 from docx import Document
@@ -12,7 +11,6 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 from fpdf import FPDF
 from pptx import Presentation
-import zipfile
 import io
 
 # Setup logging
@@ -30,7 +28,7 @@ def html_to_docx(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     doc = Document()
     
-    for element in soup.children:
+    for element in soup.find_all(True):
         if element.name == "p":
             doc.add_paragraph(element.get_text())
         elif element.name in ["h1", "h2", "h3"]:
@@ -88,8 +86,8 @@ export_format = st.radio("Select Export Format", ["DOCX", "PDF", "PowerPoint"])
 if st.button("Convert & Download"):
     if uploaded_file:
         html_content = uploaded_file.read().decode("utf-8")
-    elif input_text:
-        html_content = input_text
+    elif input_text.strip():
+        html_content = input_text.strip()
     else:
         st.error("Please provide input!")
         st.stop()
@@ -104,7 +102,8 @@ if st.button("Convert & Download"):
         pdf = html_to_pdf(html_content)
         pdf_output = io.BytesIO()
         pdf.output(pdf_output, dest='S')
-        st.download_button("Download PDF", pdf_output.getvalue(), file_name="output.pdf", mime="application/pdf")
+        pdf_output.seek(0)
+        st.download_button("Download PDF", pdf_output, file_name="output.pdf", mime="application/pdf")
     elif export_format == "PowerPoint":
         ppt = html_to_ppt(html_content)
         ppt_path = "output.pptx"
