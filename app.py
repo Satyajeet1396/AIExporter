@@ -68,11 +68,11 @@ def convert_markdown_to_docx(markdown_text):
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
 
-    # ✅ Use session_state correctly
+    # Use session_state to store the input markdown
     if "markdown_input" not in st.session_state:
         st.session_state.markdown_input = ""
 
-    # Text area widget
+    # Text area widget (use the session state value)
     markdown_text = st.text_area(
         "Paste your copied markdown below:",
         value=st.session_state.markdown_input,
@@ -86,11 +86,12 @@ def main():
         html_text = markdown2.markdown(markdown_text)
         st.markdown(html_text, unsafe_allow_html=True)
 
+        # Convert to PDF and DOCX
         pdf_bytes = convert_markdown_to_pdf(markdown_text)
         docx_bytes = convert_markdown_to_docx(markdown_text)
 
+        # Display download buttons
         col1, col2 = st.columns(2)
-
         with col1:
             st.download_button(
                 label="Download DOCX",
@@ -98,7 +99,6 @@ def main():
                 file_name="converted.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-
         with col2:
             st.download_button(
                 label="Download PDF",
