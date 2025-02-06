@@ -47,10 +47,9 @@ def convert_markdown_to_pdf(markdown_text):
                 pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
                 counter += 1
     
-    pdf_bytes = io.BytesIO()
-    pdf.output(pdf_bytes)
-    pdf_bytes.seek(0)
-    return pdf_bytes
+    # 🛠 FIX: Get PDF as bytes instead of writing to a file
+    return pdf.output(dest='S').encode('latin1')
+
 
 def convert_markdown_to_docx(markdown_text):
     """Convert Markdown text to a DOCX file and return as bytes."""
