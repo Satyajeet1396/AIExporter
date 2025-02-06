@@ -12,6 +12,7 @@ from pygments.formatters import HtmlFormatter
 from fpdf import FPDF
 from pptx import Presentation
 import io
+from markdown import markdown
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 def convert_latex_to_omml(latex):
     try:
         mathml = convert(latex)
-        logging.info(f"Converted LaTeX to MathML: {mathml[:100]}")  # Log first 100 characters of MathML
         return f'<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">{mathml}</m:oMath>'
     except Exception as e:
         logging.error(f"Error converting LaTeX: {e}")
@@ -31,6 +31,9 @@ def html_to_docx(html_content):
         return None
     
     logging.info(f"HTML Content Received: {html_content[:500]}")  # Log first 500 characters of HTML
+    
+    # Convert Markdown-style syntax to HTML
+    html_content = markdown(html_content)
     
     soup = BeautifulSoup(html_content, "html.parser")
     logging.info(f"Parsed HTML content: {soup.prettify()[:1000]}")  # Log parsed HTML to debug
@@ -119,12 +122,8 @@ export_format = st.radio("Select Export Format", ["DOCX", "PDF", "PowerPoint"])
 if st.button("Convert & Download"):
     if uploaded_file:
         html_content = uploaded_file.read().decode("utf-8")
-        logging.info(f"File Uploaded. HTML Content Length: {len(html_content)}")
-        st.write(html_content)  # Debugging output
     elif input_text.strip():
         html_content = input_text.strip()
-        logging.info(f"HTML Content Provided. Length: {len(html_content)}")
-        st.write(html_content)  # Debugging output
     else:
         st.error("Please provide input!")
         st.stop()
@@ -134,7 +133,6 @@ if st.button("Convert & Download"):
         if doc:
             doc_path = "output.docx"
             doc.save(doc_path)
-            logging.info(f"DOCX file saved at {doc_path}")
             with open(doc_path, "rb") as f:
                 st.download_button("Download DOCX", f, file_name="output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
