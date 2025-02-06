@@ -1,0 +1,8 @@
+streamlit
+beautifulsoup4
+python-docx
+pygments
+latex2mathml
+fpdf
+python-pptx
+qrcode
