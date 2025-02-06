@@ -2,7 +2,6 @@ import streamlit as st
 import markdown2
 from fpdf import FPDF
 from docx import Document
-import tempfile
 import io
 from markdown import markdown
 from bs4 import BeautifulSoup
@@ -47,9 +46,7 @@ def convert_markdown_to_pdf(markdown_text):
                 pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
                 counter += 1
     
-    # 🛠 FIX: Get PDF as bytes instead of writing to a file
     return pdf.output(dest='S').encode('latin1')
-
 
 def convert_markdown_to_docx(markdown_text):
     """Convert Markdown text to a DOCX file and return as bytes."""
@@ -81,29 +78,23 @@ def convert_markdown_to_docx(markdown_text):
 
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
-    
-    markdown_text = st.text_area("Paste your copied markdown below:", key="markdown_input")
 
-if "markdown_input" not in st.session_state:
-    st.session_state.markdown_input = ""
+    # Use session state for live updating
+    if "markdown_input" not in st.session_state:
+        st.session_state.markdown_input = ""
 
-st.session_state.markdown_input = st.text_area("Paste your copied markdown below:", value=st.session_state.markdown_input)
+    st.session_state.markdown_input = st.text_area(
+        "Paste your copied markdown below:",
+        value=st.session_state.markdown_input
+    )
 
-st.markdown(markdown2.markdown(st.session_state.markdown_input), unsafe_allow_html=True)
-
-
-# Automatically update preview when text changes
-if markdown_text:
-    html_text = markdown2.markdown(markdown_text)
-    st.markdown(html_text, unsafe_allow_html=True)
-
-
-    if markdown_text:
-        html_text = markdown2.markdown(markdown_text)
+    # Live rendering of Markdown
+    if st.session_state.markdown_input:
+        html_text = markdown2.markdown(st.session_state.markdown_input)
         st.markdown(html_text, unsafe_allow_html=True)
 
-        pdf_bytes = convert_markdown_to_pdf(markdown_text)
-        docx_bytes = convert_markdown_to_docx(markdown_text)
+        pdf_bytes = convert_markdown_to_pdf(st.session_state.markdown_input)
+        docx_bytes = convert_markdown_to_docx(st.session_state.markdown_input)
 
         col1, col2 = st.columns(2)
 
