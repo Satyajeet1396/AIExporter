@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 def convert_latex_to_omml(latex):
     try:
         mathml = convert(latex)
+        logging.info(f"Converted LaTeX to MathML: {mathml[:100]}")  # Log first 100 characters of MathML
         return f'<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">{mathml}</m:oMath>'
     except Exception as e:
         logging.error(f"Error converting LaTeX: {e}")
@@ -29,10 +30,14 @@ def html_to_docx(html_content):
         logging.warning("Empty HTML content received for DOCX conversion.")
         return None
     
+    logging.info(f"HTML Content Received: {html_content[:500]}")  # Log first 500 characters of HTML
+    
     soup = BeautifulSoup(html_content, "html.parser")
     doc = Document()
     
     for element in soup.find_all(True):
+        logging.info(f"Processing Element: {element.name}")  # Log each element being processed
+        
         if element.name == "p":
             doc.add_paragraph(element.get_text())
         elif element.name in ["h1", "h2", "h3"]:
@@ -61,6 +66,9 @@ def html_to_docx(html_content):
             math_omml = convert_latex_to_omml(latex_code)
             p = doc.add_paragraph()
             p._element.append(parse_xml(math_omml))
+    
+    # After the loop, log the length of the document content
+    logging.info(f"Document created with {len(doc.paragraphs)} paragraphs")
     
     return doc
 
@@ -98,8 +106,12 @@ export_format = st.radio("Select Export Format", ["DOCX", "PDF", "PowerPoint"])
 if st.button("Convert & Download"):
     if uploaded_file:
         html_content = uploaded_file.read().decode("utf-8")
+        logging.info(f"File Uploaded. HTML Content Length: {len(html_content)}")
+        st.write(html_content)  # Debugging output
     elif input_text.strip():
         html_content = input_text.strip()
+        logging.info(f"HTML Content Provided. Length: {len(html_content)}")
+        st.write(html_content)  # Debugging output
     else:
         st.error("Please provide input!")
         st.stop()
@@ -109,6 +121,7 @@ if st.button("Convert & Download"):
         if doc:
             doc_path = "output.docx"
             doc.save(doc_path)
+            logging.info(f"DOCX file saved at {doc_path}")
             with open(doc_path, "rb") as f:
                 st.download_button("Download DOCX", f, file_name="output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
