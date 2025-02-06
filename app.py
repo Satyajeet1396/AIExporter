@@ -1,29 +1,35 @@
 import streamlit as st
 import re
+import logging
 from bs4 import BeautifulSoup
 from docx import Document
+from docx.shared import RGBColor
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
+from latex2mathml.converter import convert
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
-from latex2mathml.converter import convert
+from fpdf import FPDF
+from pptx import Presentation
 import zipfile
 import io
 
-# Convert LaTeX to OMML (Word equation format)
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+
 def convert_latex_to_omml(latex):
     try:
         mathml = convert(latex)
         return f'<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">{mathml}</m:oMath>'
-    except Exception:
+    except Exception as e:
+        logging.error(f"Error converting LaTeX: {e}")
         return f"[Math: {latex}]"
 
-# Convert HTML to DOCX
 def html_to_docx(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     doc = Document()
-
+    
     for element in soup.children:
         if element.name == "p":
             doc.add_paragraph(element.get_text())
@@ -33,11 +39,10 @@ def html_to_docx(html_content):
             p = doc.add_paragraph()
             run = p.add_run(element.get_text())
             run.font.name = "Courier New"
-        elif element.name == "pre":  # Code block
-            code_text = element.get_text()
+        elif element.name == "pre":
             lexer = get_lexer_by_name("python", stripall=True)
             formatter = HtmlFormatter(style="colorful")
-            highlighted_code = highlight(code_text, lexer, formatter)
+            highlighted_code = highlight(element.get_text(), lexer, formatter)
             doc.add_paragraph(highlighted_code)
         elif element.name == "table":
             rows = element.find_all("tr")
@@ -54,58 +59,55 @@ def html_to_docx(html_content):
             math_omml = convert_latex_to_omml(latex_code)
             p = doc.add_paragraph()
             p._element.append(parse_xml(math_omml))
-        elif element.name == "img":  # Handle images
-            img_src = element.get("src")
-            if img_src:
-                try:
-                    doc.add_picture(img_src)
-                except Exception as e:
-                    st.error(f"Failed to add image: {e}")
-        elif element.name == "a":  # Handle links
-            link_text = element.get_text()
-            link_url = element.get("href")
-            if link_url:
-                p = doc.add_paragraph()
-                run = p.add_run(link_text)
-                run.add_hyperlink(link_url)
-
+    
     return doc
 
+def html_to_pdf(html_content):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, html_content)
+    return pdf
+
+def html_to_ppt(html_content):
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    textbox = slide.shapes.add_textbox(50, 50, 600, 400)
+    tf = textbox.text_frame
+    tf.text = html_content
+    return prs
+
 # Streamlit UI
-st.title("ChatGPT to DOCX Converter")
-st.write("Paste ChatGPT output (HTML) below or upload an HTML file.")
+st.title("ChatGPT Export Tool")
+st.write("Convert ChatGPT outputs into DOCX, PDF, or PowerPoint.")
 
-uploaded_file = st.file_uploader("Upload an HTML file", type=["html"], accept_multiple_files=True)
-input_text = st.text_area("Paste ChatGPT output (HTML format)")
+uploaded_file = st.file_uploader("Upload HTML File", type=["html"], accept_multiple_files=False)
+input_text = st.text_area("Paste HTML Content")
+export_format = st.radio("Select Export Format", ["DOCX", "PDF", "PowerPoint"])
 
-if st.button("Convert to DOCX"):
+if st.button("Convert & Download"):
     if uploaded_file:
-        doc_files = []
-        for file in uploaded_file:
-            html_content = file.read().decode("utf-8")
-            doc = html_to_docx(html_content)
-            doc_path = f"converted_output_{file.name}.docx"
-            doc.save(doc_path)
-            doc_files.append(doc_path)
-        
-        if len(doc_files) > 1:
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                for doc_file in doc_files:
-                    zip_file.write(doc_file)
-            zip_buffer.seek(0)
-            st.download_button("Download All DOCX", zip_buffer, file_name="ChatGPT_outputs.zip", mime="application/zip")
-        else:
-            with open(doc_files[0], "rb") as f:
-                st.download_button("Download DOCX", f, file_name="ChatGPT_output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        html_content = uploaded_file.read().decode("utf-8")
     elif input_text:
         html_content = input_text
-        doc = html_to_docx(html_content)
-        doc_path = "converted_output.docx"
-        doc.save(doc_path)
-
-        with open(doc_path, "rb") as f:
-            st.download_button("Download DOCX", f, file_name="ChatGPT_output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     else:
         st.error("Please provide input!")
         st.stop()
+    
+    if export_format == "DOCX":
+        doc = html_to_docx(html_content)
+        doc_path = "output.docx"
+        doc.save(doc_path)
+        with open(doc_path, "rb") as f:
+            st.download_button("Download DOCX", f, file_name="output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    elif export_format == "PDF":
+        pdf = html_to_pdf(html_content)
+        pdf_output = io.BytesIO()
+        pdf.output(pdf_output, dest='S')
+        st.download_button("Download PDF", pdf_output.getvalue(), file_name="output.pdf", mime="application/pdf")
+    elif export_format == "PowerPoint":
+        ppt = html_to_ppt(html_content)
+        ppt_path = "output.pptx"
+        ppt.save(ppt_path)
+        with open(ppt_path, "rb") as f:
+            st.download_button("Download PowerPoint", f, file_name="output.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
