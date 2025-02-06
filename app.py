@@ -4,6 +4,8 @@ from fpdf import FPDF
 from docx import Document
 import tempfile
 import os
+from markdown import markdown
+from bs4 import BeautifulSoup
 
 def convert_markdown_to_pdf(markdown_text, pdf_filename):
     pdf = FPDF()
@@ -19,9 +21,26 @@ def convert_markdown_to_pdf(markdown_text, pdf_filename):
 
 def convert_markdown_to_docx(markdown_text, docx_filename):
     doc = Document()
-    lines = markdown_text.split("\n")
-    for line in lines:
-        doc.add_paragraph(line)
+    html = markdown(markdown_text)
+    soup = BeautifulSoup(html, "html.parser")
+    
+    for tag in soup.find_all():
+        if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            doc.add_heading(tag.get_text(), level=int(tag.name[1]))
+        elif tag.name == "p":
+            doc.add_paragraph(tag.get_text())
+        elif tag.name == "strong":
+            p = doc.add_paragraph()
+            p.add_run(tag.get_text()).bold = True
+        elif tag.name == "em":
+            p = doc.add_paragraph()
+            p.add_run(tag.get_text()).italic = True
+        elif tag.name == "ul":
+            for li in tag.find_all("li"):
+                doc.add_paragraph(li.get_text(), style="List Bullet")
+        elif tag.name == "ol":
+            for li in tag.find_all("li"):
+                doc.add_paragraph(li.get_text(), style="List Number")
     
     doc.save(docx_filename)
 
