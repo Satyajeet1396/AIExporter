@@ -3,6 +3,7 @@ import markdown2
 from fpdf import FPDF
 from docx import Document
 import tempfile
+import io
 from markdown import markdown
 from bs4 import BeautifulSoup
 
@@ -11,8 +12,8 @@ def parse_markdown(markdown_text):
     html = markdown(markdown_text)
     return BeautifulSoup(html, "html.parser")
 
-def convert_markdown_to_pdf(markdown_text, pdf_filename):
-    """Convert Markdown text to a PDF file."""
+def convert_markdown_to_pdf(markdown_text):
+    """Convert Markdown text to a PDF file and return as bytes."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -46,10 +47,13 @@ def convert_markdown_to_pdf(markdown_text, pdf_filename):
                 pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
                 counter += 1
     
-    pdf.output(pdf_filename)
+    pdf_bytes = io.BytesIO()
+    pdf.output(pdf_bytes)
+    pdf_bytes.seek(0)
+    return pdf_bytes
 
-def convert_markdown_to_docx(markdown_text, docx_filename):
-    """Convert Markdown text to a DOCX file."""
+def convert_markdown_to_docx(markdown_text):
+    """Convert Markdown text to a DOCX file and return as bytes."""
     doc = Document()
     soup = parse_markdown(markdown_text)
     
@@ -70,41 +74,41 @@ def convert_markdown_to_docx(markdown_text, docx_filename):
         elif tag.name == "ol":
             for li in tag.find_all("li"):
                 doc.add_paragraph(li.get_text(), style="List Number")
-    
-    doc.save(docx_filename)
+
+    doc_bytes = io.BytesIO()
+    doc.save(doc_bytes)
+    doc_bytes.seek(0)
+    return doc_bytes
 
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
     
-    markdown_text = st.text_area("Paste your copied markdown below:", key="markdown_input", on_change=None)
-    
+    markdown_text = st.text_area("Paste your copied markdown below:", key="markdown_input")
+
     if markdown_text:
         html_text = markdown2.markdown(markdown_text)
         st.markdown(html_text, unsafe_allow_html=True)
-        
+
+        pdf_bytes = convert_markdown_to_pdf(markdown_text)
+        docx_bytes = convert_markdown_to_docx(markdown_text)
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmpfile:
-                convert_markdown_to_docx(markdown_text, tmpfile.name)
-                st.download_button(
-                    label="Download DOCX",
-                    data=open(tmpfile.name, "rb").read(),
-                    file_name="converted.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-        
+            st.download_button(
+                label="Download DOCX",
+                data=docx_bytes,
+                file_name="converted.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+
         with col2:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-                convert_markdown_to_pdf(markdown_text, tmpfile.name)
-                st.download_button(
-                    label="Download PDF",
-                    data=open(tmpfile.name, "rb").read(),
-                    file_name="converted.pdf",
-                    mime="application/pdf"
-                )
-    else:
-        st.warning("Please paste some markdown text.")
+            st.download_button(
+                label="Download PDF",
+                data=pdf_bytes,
+                file_name="converted.pdf",
+                mime="application/pdf"
+            )
 
 if __name__ == "__main__":
     main()
