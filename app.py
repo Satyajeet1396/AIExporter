@@ -6,56 +6,44 @@ import io
 from markdown import markdown
 from bs4 import BeautifulSoup
 
+# ✅ Ensure session state for automatic updates
+if "markdown_input" not in st.session_state:
+    st.session_state.markdown_input = ""
+
 def parse_markdown(markdown_text):
-    """Helper function to parse Markdown into HTML and BeautifulSoup."""
+    """Convert Markdown to BeautifulSoup for parsing."""
     html = markdown(markdown_text)
     return BeautifulSoup(html, "html.parser")
 
 def convert_markdown_to_pdf(markdown_text):
-    """Convert Markdown text to a PDF file and return as bytes with UTF-8 support."""
+    """Convert Markdown text to a PDF file and return as bytes."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    # 🛠 Use a Unicode-supported font (DejaVu Sans or Arial Unicode MS)
-    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
-    pdf.set_font("DejaVu", size=12)
+    # ✅ Remove colors: Use a standard font
+    pdf.set_font("Arial", size=12)
 
     soup = parse_markdown(markdown_text)
-
     for tag in soup.find_all():
         if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            pdf.set_font("DejaVu", style="B", size=16 - (int(tag.name[1]) * 2))
-            pdf.multi_cell(0, 10, tag.get_text())
+            pdf.set_font("Arial", style="B", size=16 - (int(tag.name[1]) * 2))
         elif tag.name == "p":
-            pdf.set_font("DejaVu", size=12)
-            pdf.multi_cell(0, 10, tag.get_text())
+            pdf.set_font("Arial", size=12)
         elif tag.name == "strong":
-            pdf.set_font("DejaVu", style="B", size=12)
-            pdf.multi_cell(0, 10, tag.get_text())
+            pdf.set_font("Arial", style="B", size=12)
         elif tag.name == "em":
-            pdf.set_font("DejaVu", style="I", size=12)
-            pdf.multi_cell(0, 10, tag.get_text())
-        elif tag.name == "ul":
-            for li in tag.find_all("li"):
-                pdf.set_font("DejaVu", size=12)
-                pdf.cell(10)
-                pdf.multi_cell(0, 10, "• " + li.get_text())
-        elif tag.name == "ol":
-            counter = 1
-            for li in tag.find_all("li"):
-                pdf.set_font("DejaVu", size=12)
-                pdf.cell(10)
-                pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
-                counter += 1
+            pdf.set_font("Arial", style="I", size=12)
 
-    return pdf.output(dest='S').encode('utf-8')  # ✅ Fix encoding
+        pdf.multi_cell(0, 10, tag.get_text())
+
+    return pdf.output(dest="S").encode("latin1")
 
 def convert_markdown_to_docx(markdown_text):
     """Convert Markdown text to a DOCX file and return as bytes."""
     doc = Document()
     soup = parse_markdown(markdown_text)
-    
+
     for tag in soup.find_all():
         if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             doc.add_heading(tag.get_text(), level=int(tag.name[1]))
@@ -79,19 +67,21 @@ def convert_markdown_to_docx(markdown_text):
     doc_bytes.seek(0)
     return doc_bytes
 
+def update_text():
+    """Trigger re-run when text changes."""
+    st.session_state.markdown_input = st.session_state.text_area_value
+
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
 
-    # Use session state for live updating
-    if "markdown_input" not in st.session_state:
-        st.session_state.markdown_input = ""
-
-    st.session_state.markdown_input = st.text_area(
+    # ✅ Auto-render on text change
+    st.text_area(
         "Paste your copied markdown below:",
-        value=st.session_state.markdown_input
+        value=st.session_state.markdown_input,
+        key="text_area_value",
+        on_change=update_text
     )
 
-    # Live rendering of Markdown
     if st.session_state.markdown_input:
         html_text = markdown2.markdown(st.session_state.markdown_input)
         st.markdown(html_text, unsafe_allow_html=True)
