@@ -33,8 +33,11 @@ def html_to_docx(html_content):
     logging.info(f"HTML Content Received: {html_content[:500]}")  # Log first 500 characters of HTML
     
     soup = BeautifulSoup(html_content, "html.parser")
-    doc = Document()
+    logging.info(f"Parsed HTML content: {soup.prettify()[:1000]}")  # Log parsed HTML to debug
     
+    doc = Document()
+
+    # Look for specific tags and add content to doc
     for element in soup.find_all(True):
         logging.info(f"Processing Element: {element.name}")  # Log each element being processed
         
