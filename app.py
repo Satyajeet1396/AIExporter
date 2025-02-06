@@ -25,6 +25,10 @@ def convert_latex_to_omml(latex):
         return f"[Math: {latex}]"
 
 def html_to_docx(html_content):
+    if not html_content.strip():
+        logging.warning("Empty HTML content received for DOCX conversion.")
+        return None
+    
     soup = BeautifulSoup(html_content, "html.parser")
     doc = Document()
     
@@ -61,6 +65,10 @@ def html_to_docx(html_content):
     return doc
 
 def html_to_pdf(html_content):
+    if not html_content.strip():
+        logging.warning("Empty HTML content received for PDF conversion.")
+        return None
+    
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -68,6 +76,10 @@ def html_to_pdf(html_content):
     return pdf
 
 def html_to_ppt(html_content):
+    if not html_content.strip():
+        logging.warning("Empty HTML content received for PPT conversion.")
+        return None
+    
     prs = Presentation()
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     textbox = slide.shapes.add_textbox(50, 50, 600, 400)
@@ -94,19 +106,28 @@ if st.button("Convert & Download"):
     
     if export_format == "DOCX":
         doc = html_to_docx(html_content)
-        doc_path = "output.docx"
-        doc.save(doc_path)
-        with open(doc_path, "rb") as f:
-            st.download_button("Download DOCX", f, file_name="output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        if doc:
+            doc_path = "output.docx"
+            doc.save(doc_path)
+            with open(doc_path, "rb") as f:
+                st.download_button("Download DOCX", f, file_name="output.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        else:
+            st.error("Failed to generate DOCX file.")
     elif export_format == "PDF":
         pdf = html_to_pdf(html_content)
-        pdf_output = io.BytesIO()
-        pdf.output(pdf_output, dest='S')
-        pdf_output.seek(0)
-        st.download_button("Download PDF", pdf_output, file_name="output.pdf", mime="application/pdf")
+        if pdf:
+            pdf_output = io.BytesIO()
+            pdf.output(pdf_output, dest='S')
+            pdf_output.seek(0)
+            st.download_button("Download PDF", pdf_output, file_name="output.pdf", mime="application/pdf")
+        else:
+            st.error("Failed to generate PDF file.")
     elif export_format == "PowerPoint":
         ppt = html_to_ppt(html_content)
-        ppt_path = "output.pptx"
-        ppt.save(ppt_path)
-        with open(ppt_path, "rb") as f:
-            st.download_button("Download PowerPoint", f, file_name="output.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        if ppt:
+            ppt_path = "output.pptx"
+            ppt.save(ppt_path)
+            with open(ppt_path, "rb") as f:
+                st.download_button("Download PowerPoint", f, file_name="output.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        else:
+            st.error("Failed to generate PowerPoint file.")
