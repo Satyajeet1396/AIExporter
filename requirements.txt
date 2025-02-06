@@ -6,3 +6,4 @@ pygments
 fpdf
 python-pptx
 markdown
+markdown2
