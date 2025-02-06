@@ -52,8 +52,12 @@ def html_to_docx(html_content):
         
         if element.name == "p":
             doc.add_paragraph(element.get_text())
-        elif element.name in ["h1", "h2", "h3"]:
-            doc.add_paragraph(element.get_text(), style=element.name.capitalize())
+        elif element.name == "h1":
+            doc.add_paragraph(element.get_text(), style='Heading 1')
+        elif element.name == "h2":
+            doc.add_paragraph(element.get_text(), style='Heading 2')
+        elif element.name == "h3":
+            doc.add_paragraph(element.get_text(), style='Heading 3')  # Correct style name
         elif element.name == "code":
             p = doc.add_paragraph()
             run = p.add_run(element.get_text())
@@ -87,6 +91,7 @@ def html_to_docx(html_content):
         logging.warning("No paragraphs were added to the document.")
 
     return doc
+
 
 def html_to_pdf(html_content):
     if not html_content.strip():
