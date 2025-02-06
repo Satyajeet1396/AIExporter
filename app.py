@@ -84,6 +84,20 @@ def main():
     
     markdown_text = st.text_area("Paste your copied markdown below:", key="markdown_input")
 
+if "markdown_input" not in st.session_state:
+    st.session_state.markdown_input = ""
+
+st.session_state.markdown_input = st.text_area("Paste your copied markdown below:", value=st.session_state.markdown_input)
+
+st.markdown(markdown2.markdown(st.session_state.markdown_input), unsafe_allow_html=True)
+
+
+# Automatically update preview when text changes
+if markdown_text:
+    html_text = markdown2.markdown(markdown_text)
+    st.markdown(html_text, unsafe_allow_html=True)
+
+
     if markdown_text:
         html_text = markdown2.markdown(markdown_text)
         st.markdown(html_text, unsafe_allow_html=True)
