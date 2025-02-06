@@ -72,36 +72,27 @@ def convert_markdown_to_docx(markdown_text, docx_filename):
 def main():
     st.title("LLM Markdown to DOCX & PDF Converter")
     
-    markdown_text = st.text_area("Paste your copied markdown below:")
+    markdown_text = st.text_area("Paste your copied markdown below:", key="markdown_input", on_change=None)
     
-    if st.button("Render Markdown"):
-        if markdown_text:
-            html_text = markdown2.markdown(markdown_text)
-            st.markdown(html_text, unsafe_allow_html=True)
-        else:
-            st.warning("Please paste some markdown text.")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("Convert to DOCX"):
-            if markdown_text:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmpfile:
-                    convert_markdown_to_docx(markdown_text, tmpfile.name)
-                    st.download_button(label="Download DOCX", data=open(tmpfile.name, "rb").read(), file_name="converted.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                    os.unlink(tmpfile.name)
-            else:
-                st.warning("Please paste some markdown text.")
-    
-    with col2:
-        if st.button("Convert to PDF"):
-            if markdown_text:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-                    convert_markdown_to_pdf(markdown_text, tmpfile.name)
-                    st.download_button(label="Download PDF", data=open(tmpfile.name, "rb").read(), file_name="converted.pdf", mime="application/pdf")
-                    os.unlink(tmpfile.name)
-            else:
-                st.warning("Please paste some markdown text.")
+    if markdown_text:
+        html_text = markdown2.markdown(markdown_text)
+        st.markdown(html_text, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmpfile:
+                convert_markdown_to_docx(markdown_text, tmpfile.name)
+                st.download_button(label="Download DOCX", data=open(tmpfile.name, "rb").read(), file_name="converted.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                os.unlink(tmpfile.name)
+        
+        with col2:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
+                convert_markdown_to_pdf(markdown_text, tmpfile.name)
+                st.download_button(label="Download PDF", data=open(tmpfile.name, "rb").read(), file_name="converted.pdf", mime="application/pdf")
+                os.unlink(tmpfile.name)
+    else:
+        st.warning("Please paste some markdown text.")
     
 if __name__ == "__main__":
     main()
