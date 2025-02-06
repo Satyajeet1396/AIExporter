@@ -36,6 +36,12 @@ def html_to_docx(html_content):
     logging.info(f"Parsed HTML content: {soup.prettify()[:1000]}")  # Log parsed HTML to debug
     
     doc = Document()
+    
+    # Check if we can find the expected HTML elements
+    paragraphs = soup.find_all('p')
+    headings = soup.find_all(['h1', 'h2', 'h3'])
+    
+    logging.info(f"Found {len(paragraphs)} <p> tags and {len(headings)} heading tags")
 
     # Look for specific tags and add content to doc
     for element in soup.find_all(True):
@@ -73,6 +79,10 @@ def html_to_docx(html_content):
     # After the loop, log the length of the document content
     logging.info(f"Document created with {len(doc.paragraphs)} paragraphs")
     
+    # If no paragraphs were added, log a warning
+    if len(doc.paragraphs) == 0:
+        logging.warning("No paragraphs were added to the document.")
+
     return doc
 
 def html_to_pdf(html_content):
