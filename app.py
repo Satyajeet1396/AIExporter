@@ -13,9 +13,34 @@ def convert_markdown_to_pdf(markdown_text, pdf_filename):
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     
-    lines = markdown_text.split("\n")
-    for line in lines:
-        pdf.multi_cell(0, 10, line)
+    html = markdown(markdown_text)
+    soup = BeautifulSoup(html, "html.parser")
+    
+    for tag in soup.find_all():
+        if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            pdf.set_font("Arial", style="B", size=16 - (int(tag.name[1]) * 2))
+            pdf.multi_cell(0, 10, tag.get_text())
+        elif tag.name == "p":
+            pdf.set_font("Arial", size=12)
+            pdf.multi_cell(0, 10, tag.get_text())
+        elif tag.name == "strong":
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.multi_cell(0, 10, tag.get_text())
+        elif tag.name == "em":
+            pdf.set_font("Arial", style="I", size=12)
+            pdf.multi_cell(0, 10, tag.get_text())
+        elif tag.name == "ul":
+            for li in tag.find_all("li"):
+                pdf.set_font("Arial", size=12)
+                pdf.cell(10)
+                pdf.multi_cell(0, 10, "• " + li.get_text())
+        elif tag.name == "ol":
+            counter = 1
+            for li in tag.find_all("li"):
+                pdf.set_font("Arial", size=12)
+                pdf.cell(10)
+                pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
+                counter += 1
     
     pdf.output(pdf_filename)
 
