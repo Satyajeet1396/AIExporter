@@ -12,41 +12,44 @@ def parse_markdown(markdown_text):
     return BeautifulSoup(html, "html.parser")
 
 def convert_markdown_to_pdf(markdown_text):
-    """Convert Markdown text to a PDF file and return as bytes."""
+    """Convert Markdown text to a PDF file and return as bytes with UTF-8 support."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    
+
+    # 🛠 Use a Unicode-supported font (DejaVu Sans or Arial Unicode MS)
+    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+    pdf.set_font("DejaVu", size=12)
+
     soup = parse_markdown(markdown_text)
-    
+
     for tag in soup.find_all():
         if tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            pdf.set_font("Arial", style="B", size=16 - (int(tag.name[1]) * 2))
+            pdf.set_font("DejaVu", style="B", size=16 - (int(tag.name[1]) * 2))
             pdf.multi_cell(0, 10, tag.get_text())
         elif tag.name == "p":
-            pdf.set_font("Arial", size=12)
+            pdf.set_font("DejaVu", size=12)
             pdf.multi_cell(0, 10, tag.get_text())
         elif tag.name == "strong":
-            pdf.set_font("Arial", style="B", size=12)
+            pdf.set_font("DejaVu", style="B", size=12)
             pdf.multi_cell(0, 10, tag.get_text())
         elif tag.name == "em":
-            pdf.set_font("Arial", style="I", size=12)
+            pdf.set_font("DejaVu", style="I", size=12)
             pdf.multi_cell(0, 10, tag.get_text())
         elif tag.name == "ul":
             for li in tag.find_all("li"):
-                pdf.set_font("Arial", size=12)
+                pdf.set_font("DejaVu", size=12)
                 pdf.cell(10)
                 pdf.multi_cell(0, 10, "• " + li.get_text())
         elif tag.name == "ol":
             counter = 1
             for li in tag.find_all("li"):
-                pdf.set_font("Arial", size=12)
+                pdf.set_font("DejaVu", size=12)
                 pdf.cell(10)
                 pdf.multi_cell(0, 10, f"{counter}. {li.get_text()}")
                 counter += 1
-    
-    return pdf.output(dest='S').encode('latin1')
+
+    return pdf.output(dest='S').encode('utf-8')  # ✅ Fix encoding
 
 def convert_markdown_to_docx(markdown_text):
     """Convert Markdown text to a DOCX file and return as bytes."""
