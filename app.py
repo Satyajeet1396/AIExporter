@@ -32,7 +32,7 @@ def html_to_docx(html_content):
     
     logging.info(f"HTML Content Received: {html_content[:500]}")  # Log first 500 characters of HTML
     
-    # Convert Markdown-style syntax to HTML
+    # Convert Markdown-style syntax to HTML (if needed)
     html_content = markdown(html_content)
     
     soup = BeautifulSoup(html_content, "html.parser")
@@ -51,7 +51,16 @@ def html_to_docx(html_content):
         logging.info(f"Processing Element: {element.name}")  # Log each element being processed
         
         if element.name == "p":
-            doc.add_paragraph(element.get_text())
+            p = doc.add_paragraph(element.get_text())
+            # Apply formatting if needed (e.g., bold, italic)
+            if element.find("strong"):  # Bold text
+                for run in p.runs:
+                    if element.find("strong"):
+                        run.bold = True
+            if element.find("em"):  # Italic text
+                for run in p.runs:
+                    if element.find("em"):
+                        run.italic = True
         elif element.name == "h1":
             doc.add_paragraph(element.get_text(), style='Heading 1')
         elif element.name == "h2":
@@ -62,6 +71,8 @@ def html_to_docx(html_content):
             p = doc.add_paragraph()
             run = p.add_run(element.get_text())
             run.font.name = "Courier New"
+            run.font.size = Pt(10)  # Set the font size for code
+            run.font.color.rgb = RGBColor(0, 0, 255)  # Set font color for code (blue)
         elif element.name == "pre":
             lexer = get_lexer_by_name("python", stripall=True)
             formatter = HtmlFormatter(style="colorful")
