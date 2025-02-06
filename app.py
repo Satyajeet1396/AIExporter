@@ -18,11 +18,9 @@ def html_to_docx(html_content):
     
     logging.info(f"HTML Content Received: {html_content[:500]}")  # Log first 500 characters of HTML
 
-    # Parse the HTML
     soup = BeautifulSoup(html_content, "html.parser")
     
     document = Document()
-    
     paragraphs = soup.find_all('p')
     headings = soup.find_all(['h1', 'h2', 'h3'])
     
@@ -43,36 +41,19 @@ def html_to_docx(html_content):
     
     # Handle code blocks within elements with 'code' class
     for element in soup.find_all(True):
-        if element.name == "code":
-            text = element.get("class", []).get('text', '')
-            p = document.add_paragraph()
-            run = p.get_run()
-            
-            # Apply specific font settings for code
-            lexer = get_lexer_by_name("python")
-            formatter = HtmlFormatter(style="colorful")
-            highlighted_code = highlighter(lexer, "python")(
-                text,
-                formatter,
-            )
-            
-            doc.add_element(run, 'code', highlighted_code)
-    
-    # Handle spans with math tags
-    for element in soup.find_all(True):
         if element.name == "span" and "math" in element.get("class", []):
             content = element.get_text()
             math_omml = convert_latex_to_omml(content)
             p = document.add_paragraph()
             p._element.append(parse_xml(math_omml))
     
-    # Process tables
+    # Handle tables
     for table in soup.find_all('table'):
         rows = table.find_all("tr")
         if not rows:
             continue
         cols = len(rows[0].find_all(["td", "th"]))
-        doc.add_table(rows, cols)
+        document.add_table(rows, cols)
     
     logging.info(f"Document created with {len(document.paragraphs)} paragraphs")
     
@@ -80,8 +61,6 @@ def html_to_docx(html_content):
         logging.warning("No paragraphs were added to the document.")
     else:
         logging.info(f"After processing HTML: {len(document.paragraphs)} paragraphs in DOCX")
-        
-    return document
 
 def convert_latex_to_omml(latex_code):
     # Example of conversion with more accurate formatting
@@ -93,47 +72,42 @@ def convert_latex_to_omml(latex_code):
     )
     return highlighter(lexer, "python")(highlighted_code)
 
-def main():
-    st.title('HTML to DOCX Converter')
+# Streamlit GUI
 
-    file uploader for HTML content
-    uploaded_file = st.file_uploader("Upload HTML file", type=["html"])
+st.title('HTML to DOCX Converter')
+
+# File uploader for HTML content
+uploaded_file = st.file_uploader("Upload HTML file", type=["html"])
+
+# Text area for HTML input (if not uploading a file)
+html_content = st.text_area("Or enter HTML content", height=300)
+
+if uploaded_file:
+    html_content = uploaded_file.read().decode("utf-8")
+    st.success("HTML file uploaded successfully.")
+elif html_content:
+    st.success("HTML content provided.")
+else:
+    st.warning("Please upload or provide HTML content to convert.")
+
+# If the user uploads a file or enters HTML content
+if uploaded_file:
+    doc = html_to_docx(html_content)
     
-    html_content = None
-    if uploaded_file:
-        uploaded_file_content = uploaded_file.read().decode('utf-8')
-        html_content = document.add_paragraph()
-        html_content._element.append(document.parse_xml(uploaded_file.read().decode('utf-8')))
-        html_content.get_text() = uploaded_file_content
-    
-    # Prepare HTML content
-    if not html_content:
-        st.error("Empty HTML file or no HTML content was uploaded.")
-        return
-    
-    st.info("Converting HTML to DOCX...")
-    
-    try:
-        doc = html_to_docx(html_content)
-        logging.info(f"Conversion completed: {doc.__class__.__name__}")
-        if doc:
-            logging.info(f"Document created with {len(doc.paragraphs)} paragraphs")
-            
-            st.success("DOCX Document Created.")
-            doc.save('output.docx')
-            
-            # Provide a download link
-            with open('output.docx', 'rb') as f:
-                st.download_file(
-                    'output.docx',
-                    'output.docx',
-                    ['output.docx']
-                )
+    if doc:
+        # Save DOCX to a file
+        doc_path = "output.docx"
+        doc.save(doc_path)
+        st.success(f"Document created: {doc_path}")
         
-        logging.info("Conversion failed or didn't produce proper DOCX file.")
-    except Exception as e:
-        logging.error(f"Error converting HTML to DOCX: {str(e)}")
-        st.error("Failed to convert HTML. Please check your input.")
-
-if __name__ == "__main__":
-    main()
+        # Provide a download link for the DOCX file
+        with open(doc_path, "rb") as f:
+            st.download_file(
+                'output.docx',
+                'output.docx',
+                ['output.docx']
+            )
+    else:
+        st.error("Failed to convert HTML to DOCX.")
+else:
+    st.warning("Please upload or provide HTML content to convert.")
