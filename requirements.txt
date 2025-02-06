@@ -5,4 +5,3 @@ pygments
 latex2mathml
 fpdf
 python-pptx
-qrcode
