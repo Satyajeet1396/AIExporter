@@ -1,7 +1,8 @@
 streamlit
 beautifulsoup4
 python-docx
-pygments
 latex2mathml
+pygments
 fpdf
 python-pptx
+markdown
